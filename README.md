@@ -37,6 +37,39 @@ openssl rsa -pubout -in backend/config/keys/private.pem -out backend/config/keys
 - Gateway: `8380`
 - TitanX Agent Gateway: `3000`
 
+## 阿里云 ECS Docker 部署
+
+推荐在阿里云 ECS 的“构建部署”中选择：
+
+- 是否使用 Docker 构建：是
+- 构建部署模式：自定义脚本模式
+
+自定义脚本可以直接执行：
+
+```bash
+bash deploy/aliyun-deploy.sh
+```
+
+脚本会在首次运行时自动完成：
+
+- 生成 `.env`，并自动创建 `MYSQL_ROOT_PASSWORD` 与 `MYSQL_PASSWORD`
+- 生成后端 JWT RSA 密钥到 `backend/config/keys/`
+- 使用 `docker compose -f deploy/docker-compose.yml up -d --build` 启动完整服务
+
+第一次部署后，请编辑 ECS 上的 `.env`，把：
+
+```bash
+KIMI_API_KEY=replace-me
+```
+
+替换成你自己的 Kimi API Key，然后重新执行：
+
+```bash
+bash deploy/aliyun-deploy.sh
+```
+
+公网只需要开放 `80` 端口即可通过 `http://ECS公网IP` 访问。`8080`、`8380`、`3000`、`3306`、`6379` 不建议直接暴露到公网。
+
 ## 安全说明
 
 仓库不应提交 API Key、数据库密码、OSS AccessKey、JWT 私钥、本地上传文件、构建产物或压测原始日志。运行时配置请通过环境变量、服务器配置文件或 CI/CD Secret 注入。
@@ -44,4 +77,3 @@ openssl rsa -pubout -in backend/config/keys/private.pem -out backend/config/keys
 ## 测试报告
 
 完整测试与压测结果见 [docs/reports/KnowFlow_Test_Report_2026-04-26.md](docs/reports/KnowFlow_Test_Report_2026-04-26.md)。
-
