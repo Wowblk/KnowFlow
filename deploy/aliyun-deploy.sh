@@ -61,7 +61,8 @@ if grep -q '^KIMI_API_KEY=replace-me$' .env; then
   echo "Edit .env and replace it with your real Kimi API key before using AI features."
 fi
 
-docker compose -f deploy/docker-compose.yml down
-docker compose -f deploy/docker-compose.yml up -d --build
-docker compose -f deploy/docker-compose.yml ps
+COMPOSE="docker compose --env-file .env -f deploy/docker-compose.yml"
 
+$COMPOSE down
+$COMPOSE up -d --build
+$COMPOSE ps
