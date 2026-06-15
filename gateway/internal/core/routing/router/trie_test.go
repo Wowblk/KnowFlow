@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -130,7 +131,7 @@ func TestTrieSearch(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rules, found := trie.Search(tt.path)
+			rules, found := trie.Search(context.Background(), tt.path)
 			assert.Equal(t, tt.wantFound, found, "Expected found to be %v for path %v", tt.wantFound, tt.path)
 			assert.Equal(t, tt.wantRules, rules, "Expected rules to match for path %v", tt.path)
 		})

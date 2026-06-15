@@ -162,6 +162,9 @@ func Breaker() gin.HandlerFunc {
 		// 在 Hystrix 熔断器中执行请求
 		err := hystrix.Do(path, func() error {
 			c.Next() // 处理下游请求
+			if len(c.Errors) > 0 {
+				return c.Errors.Last().Err
+			}
 			return c.Err()
 		}, func(err error) error {
 			// 熔断打开时的回退逻辑

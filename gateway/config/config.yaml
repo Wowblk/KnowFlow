@@ -112,7 +112,7 @@ traffic:
       "/api/v1/*path":
         qps: 800
         burst: 2000
-        enable: true
+        enabled: true
   breaker:
     enabled: true
     errorrate: 0.5

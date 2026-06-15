@@ -108,6 +108,10 @@ func InitHealthChecker(cfg *config.Config) *HealthChecker {
 
 // clearRedisKeys 清空 Redis 中所有相关键
 func (h *HealthChecker) clearRedisKeys() error {
+	if cache.Client == nil {
+		logger.Warn("Redis client is not initialized, skipping health cache cleanup")
+		return nil
+	}
 	patterns := []string{
 		healthStatsPrefix + "*",
 		cachePrefix + "*",
@@ -186,6 +190,9 @@ func (h *HealthChecker) RefreshTargets(cfg *config.Config) {
 
 // saveToRedis 保存目标状态到 Redis
 func (h *HealthChecker) saveToRedis(target string, stat *TargetStatus) error {
+	if cache.Client == nil {
+		return nil
+	}
 	key := GetHealthStatsKey(target)
 	data := map[string]interface{}{
 		"rule":                stat.Rule,
@@ -206,6 +213,9 @@ func (h *HealthChecker) saveToRedis(target string, stat *TargetStatus) error {
 
 // loadFromRedis 从 Redis 加载目标状态
 func (h *HealthChecker) loadFromRedis(target string) (*TargetStatus, error) {
+	if cache.Client == nil {
+		return nil, nil
+	}
 	key := GetHealthStatsKey(target)
 	data, err := cache.Client.HGetAll(h.ctx, key).Result()
 	if err != nil {

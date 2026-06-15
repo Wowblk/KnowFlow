@@ -147,23 +147,33 @@ func LeakyBucketRateLimit() gin.HandlerFunc {
 			return
 		}
 
-		// 检查IP限流（这里假设配置中增加了IP限流规则）
+		// 检查IP限流
 		clientIP := c.ClientIP()
-		ipQPS := cfg.Traffic.RateLimit.QPS / 2 // 示例：IP限流为全局的一半
+		ipQPS := cfg.Traffic.RateLimit.QPS / 2
 		ipBurst := cfg.Traffic.RateLimit.Burst / 2
+		if ipLimit := matchIPLimit(cfg, clientIP); ipLimit != nil {
+			ipQPS = ipLimit.QPS
+			ipBurst = ipLimit.Burst
+		}
 		ipLimiter := mdl.getOrCreateLimiter("ip", clientIP, ipQPS, ipBurst)
 		if !ipLimiter.Allow() {
 			rejectRequest(c, span, "ip", clientIP, ipQPS, ipBurst)
 			return
 		}
 
-		// 检查路由限流（这里假设配置中增加了路由限流规则）
+		// 检查路由限流
 		route := c.Request.URL.Path
-		routeQPS := cfg.Traffic.RateLimit.QPS // 示例：使用全局QPS
+		routeQPS := cfg.Traffic.RateLimit.QPS
 		routeBurst := cfg.Traffic.RateLimit.Burst
-		routeLimiter := mdl.getOrCreateLimiter("route", route, routeQPS, routeBurst)
+		routeKey := route
+		if routeLimit, pattern := matchRouteLimit(cfg, route); routeLimit != nil {
+			routeQPS = routeLimit.QPS
+			routeBurst = routeLimit.Burst
+			routeKey = routeLimiterKey(pattern, routeLimit, c)
+		}
+		routeLimiter := mdl.getOrCreateLimiter("route", routeKey, routeQPS, routeBurst)
 		if !routeLimiter.Allow() {
-			rejectRequest(c, span, "route", route, routeQPS, routeBurst)
+			rejectRequest(c, span, "route", routeKey, routeQPS, routeBurst)
 			return
 		}
 

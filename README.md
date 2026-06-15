@@ -37,6 +37,18 @@ openssl rsa -pubout -in backend/config/keys/private.pem -out backend/config/keys
 - Gateway: `8380`
 - TitanX Agent Gateway: `3000`
 
+## Gateway 职责
+
+Go gateway 是 KnowFlow 的外部 API 流量治理层，不承载业务鉴权和业务逻辑；JWT 鉴权仍由 Spring Boot 后端负责。当前 gateway 负责：
+
+- 统一转发 `/api/v1/*` 到后端服务，公网不直接暴露后端与 TitanX Agent
+- 为所有请求生成或透传 `X-Request-ID`，便于跨 Nginx、gateway、backend 排查问题
+- 按 IP、路由和用户维度限流，重点保护 AI 助手、认证、搜索等高成本或高风险接口
+- 对 AI SSE 流式请求禁用 gateway 连接池代理路径，避免流式响应被缓冲或截断
+- 暴露 Prometheus 指标，作为后续限流、错误率、延迟和容量监控入口
+
+生产配置位于 `deploy/gateway-config.yaml`。如只做最小化部署，也可以让 Nginx 直接代理后端；保留 gateway 时应把它视为流量治理组件，而不是单纯的反向代理。
+
 ## 阿里云 ECS Docker 部署
 
 推荐在阿里云 ECS 的“构建部署”中选择：
@@ -60,9 +72,10 @@ bash deploy/aliyun-deploy.sh
 
 ```bash
 KIMI_API_KEY=replace-me
+OPENAI_EMBEDDING_API_KEY=replace-me
 ```
 
-替换成你自己的 Kimi API Key，然后重新执行：
+替换成你自己的 Kimi API Key 和 Embedding 服务 API Key，然后重新执行：
 
 ```bash
 bash deploy/aliyun-deploy.sh

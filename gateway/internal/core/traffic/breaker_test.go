@@ -68,15 +68,15 @@ func TestTimeSlidingWindow_ErrorRate(t *testing.T) {
 
 // TestTimeSlidingWindow_Cleanup 验证过期统计数据被清理
 func TestTimeSlidingWindow_Cleanup(t *testing.T) {
-	// 使用 2 秒窗口，便于测试：过期记录为 3 秒前，近期记录为当前时间
-	window := NewTimeSlidingWindow(2 * time.Second)
+	// 使用 5 秒窗口，便于测试：过期记录为 6 秒前，近期记录为当前时间
+	window := NewTimeSlidingWindow(5 * time.Second)
 	now := time.Now()
-	// 添加一个过期的请求统计（3 秒前）
-	window.Update(RequestStat{Success: true, Latency: 100 * time.Millisecond, Timestamp: now.Add(-3 * time.Second)})
+	// 添加一个过期的请求统计（6 秒前）
+	window.Update(RequestStat{Success: true, Latency: 100 * time.Millisecond, Timestamp: now.Add(-6 * time.Second)})
 	// 添加一个近期的请求统计（当前）
 	window.Update(RequestStat{Success: false, Latency: 200 * time.Millisecond, Timestamp: now})
-	// 等待 2 秒让后台清理协程运行
-	time.Sleep(2 * time.Second)
+	// 等待后台清理协程运行一次，同时近期记录仍在窗口内
+	time.Sleep(1100 * time.Millisecond)
 	// 此时窗口内仅应保留近期记录，错误率为 1（即失败率 100%）
 	errorRate := window.ErrorRate()
 	assert.Equal(t, 1.0, errorRate, "清理后错误率应反映仅近期失败请求")
@@ -126,7 +126,7 @@ func TestBreakerMiddleware_Fallback(t *testing.T) {
 	router.Use(Breaker())
 	// 模拟处理过程中返回错误
 	router.GET("/test", func(c *gin.Context) {
-		c.AbortWithError(http.StatusInternalServerError, errors.New("test error"))
+		c.Error(errors.New("test error"))
 	})
 
 	req, _ := http.NewRequest("GET", "/test", nil)

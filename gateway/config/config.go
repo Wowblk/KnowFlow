@@ -332,6 +332,7 @@ type TrafficRateLimit struct {
 	QPS         int                         `mapstructure:"qps"`
 	Burst       int                         `mapstructure:"burst"`
 	Algorithm   string                      `mapstructure:"algorithm"`
+	PerUser     bool                        `mapstructure:"per_user"`
 	IPLimits    map[string]TrafficRateLimit `mapstructure:"ip_limits"`    // IP维度限流
 	RouteLimits map[string]TrafficRateLimit `mapstructure:"route_limits"` // 路由维度限流
 }
@@ -406,6 +407,12 @@ func GetConfig() *Config {
 
 // SetConfig 获取当前全局配置实例（线程安全）
 func SetConfig(c *Config) {
+	if configMgr == nil {
+		configMgr = &ConfigManager{
+			ConfigChan: make(chan *Config, 1),
+			mutex:      sync.RWMutex{},
+		}
+	}
 	configMgr.mutex.Lock()
 	defer configMgr.mutex.Unlock()
 	configMgr.config = c

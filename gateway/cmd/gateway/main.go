@@ -374,6 +374,7 @@ func (s *Server) handleSaveConfig(c *gin.Context) {
 func (s *Server) setupMiddleware(cfg *config.Config) {
 	s.Router = setupGinRouter(cfg)
 
+	s.Router.Use(middleware.RequestID())
 	s.Router.Use(middleware.CacheMiddleware()) // 启用缓存中间件
 
 	plugins.LoadPlugins(s.Router, cfg) // 加载自定义插件

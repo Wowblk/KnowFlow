@@ -45,6 +45,11 @@ spring:
       chat:
         options:
           model: ${OPENAI_CHAT_MODEL:${KIMI_CHAT_MODEL:moonshot-v1-8k}}
+      embedding:
+        api-key: ${OPENAI_EMBEDDING_API_KEY:${SILICONFLOW_API_KEY:dummy}}
+        base-url: ${OPENAI_EMBEDDING_BASE_URL:${SILICONFLOW_BASE_URL:https://api.siliconflow.cn}}
+        options:
+          model: ${OPENAI_EMBEDDING_MODEL:BAAI/bge-m3}
     deepseek:
       api-key: ${DEEPSEEK_API_KEY:dummy}
     vectorstore:

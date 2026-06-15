@@ -43,6 +43,9 @@ MYSQL_PASSWORD=${MYSQL_PASSWORD}
 KIMI_API_KEY=replace-me
 KIMI_BASE_URL=https://api.moonshot.cn
 KIMI_CHAT_MODEL=moonshot-v1-8k
+OPENAI_EMBEDDING_API_KEY=replace-me
+OPENAI_EMBEDDING_BASE_URL=https://api.siliconflow.cn
+OPENAI_EMBEDDING_MODEL=BAAI/bge-m3
 
 JWT_ISSUER=knowflow
 JWT_KEY_ID=knowflow-key

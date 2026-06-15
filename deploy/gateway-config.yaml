@@ -80,15 +80,35 @@ consul:
 traffic:
   ratelimit:
     enabled: true
-    qps: 100
-    burst: 300
+    qps: 300
+    burst: 900
     algorithm: leaky_bucket
-    ip_limits: {}
+    ip_limits:
+      "0.0.0.0/0":
+        qps: 120
+        burst: 300
+        enabled: true
     route_limits:
+      "/api/v1/agent/*path":
+        qps: 20
+        burst: 40
+        per_user: true
+        enabled: true
+      "/api/v1/auth/*path":
+        qps: 30
+        burst: 80
+        per_user: true
+        enabled: true
+      "/api/v1/search/*path":
+        qps: 120
+        burst: 300
+        per_user: false
+        enabled: true
       "/api/v1/*path":
-        qps: 800
-        burst: 2000
-        enable: true
+        qps: 240
+        burst: 700
+        per_user: false
+        enabled: true
   breaker:
     enabled: false
     errorrate: 0.5
@@ -116,4 +136,3 @@ observability:
 plugin:
   dir: bin/plugins
   plugins: []
-

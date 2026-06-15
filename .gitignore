@@ -29,7 +29,9 @@ frontend/dist/
 frontend/.vite/
 
 # Go
+.cache/
 .gocache/
+.gomodcache/
 gateway/bin/
 gateway/coverage.out
 

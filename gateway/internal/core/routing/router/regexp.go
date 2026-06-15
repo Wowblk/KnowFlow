@@ -31,6 +31,9 @@ func NewRegexpRouter(cfg *config.Config) *RegexpRouter {
 		rules: make(map[string]*regexp.Regexp),
 		cfg:   cfg,
 	}
+	for path := range cfg.Routing.GetHTTPRules() {
+		router.registerRule(path)
+	}
 	return router
 }
 

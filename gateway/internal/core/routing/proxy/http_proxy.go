@@ -72,6 +72,16 @@ func (hp *HTTPProxy) GetLoadBalancerType() string {
 	return hp.loadBalancer.Type()
 }
 
+func (hp *HTTPProxy) GetLoadBalancerActiveTargets() []string {
+	if hp == nil || hp.loadBalancer == nil {
+		return nil
+	}
+	if tracker, ok := hp.loadBalancer.(interface{ ActiveTargets() []string }); ok {
+		return tracker.ActiveTargets()
+	}
+	return nil
+}
+
 // RefreshLoadBalancer 刷新负载均衡器
 func (hp *HTTPProxy) RefreshLoadBalancer(cfg *config.Config) {
 	hp.loadBalancer = initializeLoadBalancer(cfg)
@@ -113,7 +123,7 @@ func (hp *HTTPProxy) CreateHTTPHandler(rules config.RoutingRules) gin.HandlerFun
 		}
 
 		span.SetAttributes(attribute.String("proxy.target", target))
-		if hp.httpPoolEnabled {
+		if hp.httpPoolEnabled && !isStreamingRequest(c.Request) {
 			hp.getProxyWithPool(c, target, selectedEnv)
 		} else {
 			hp.proxyDirect(c, target, selectedEnv)
@@ -139,6 +149,7 @@ func (hp *HTTPProxy) proxyDirect(c *gin.Context, target, env string) {
 	proxy := httputil.NewSingleHostReverseProxy(targetURL)
 	proxy.Director = hp.createDirector(targetURL, env)
 	proxy.ErrorHandler = hp.createErrorHandler(target, span)
+	proxy.ModifyResponse = hp.modifyResponse
 
 	logger.Info("Routing HTTP request",
 		zap.String("path", c.Request.URL.Path),
@@ -368,6 +379,14 @@ func (hp *HTTPProxy) createDirector(targetURL *url.URL, env string) func(*http.R
 	}
 }
 
+func (hp *HTTPProxy) modifyResponse(resp *http.Response) error {
+	if isStreamingResponse(resp) {
+		resp.Header.Set("X-Accel-Buffering", "no")
+		resp.Header.Set("Cache-Control", "no-cache")
+	}
+	return nil
+}
+
 // createErrorHandler 创建代理错误处理函数
 func (hp *HTTPProxy) createErrorHandler(target string, span trace.Span) func(http.ResponseWriter, *http.Request, error) {
 	return func(w http.ResponseWriter, r *http.Request, err error) {
@@ -381,6 +400,17 @@ func (hp *HTTPProxy) createErrorHandler(target string, span trace.Span) func(htt
 		w.WriteHeader(http.StatusBadGateway)
 		w.Write([]byte("Bad Gateway"))
 	}
+}
+
+func isStreamingRequest(req *http.Request) bool {
+	if strings.Contains(req.Header.Get("Accept"), "text/event-stream") {
+		return true
+	}
+	return strings.HasPrefix(req.URL.Path, "/api/v1/agent/")
+}
+
+func isStreamingResponse(resp *http.Response) bool {
+	return strings.Contains(resp.Header.Get("Content-Type"), "text/event-stream")
 }
 
 // prepareFastHTTPRequest 准备 FastHTTP 请求

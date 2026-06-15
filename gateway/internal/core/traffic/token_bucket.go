@@ -107,6 +107,10 @@ func TokenBucketRateLimit() gin.HandlerFunc {
 		clientIP := c.ClientIP()
 		ipQPS := cfg.Traffic.RateLimit.QPS / 2
 		ipBurst := cfg.Traffic.RateLimit.Burst / 2
+		if ipLimit := matchIPLimit(cfg, clientIP); ipLimit != nil {
+			ipQPS = ipLimit.QPS
+			ipBurst = ipLimit.Burst
+		}
 		ipLimiter := mdt.getOrCreateLimiter("ip", clientIP, ipQPS, ipBurst)
 		if !checkLimit(ipLimiter, c, span, "ip", clientIP) {
 			return
@@ -116,8 +120,14 @@ func TokenBucketRateLimit() gin.HandlerFunc {
 		route := c.Request.URL.Path
 		routeQPS := cfg.Traffic.RateLimit.QPS
 		routeBurst := cfg.Traffic.RateLimit.Burst
-		routeLimiter := mdt.getOrCreateLimiter("route", route, routeQPS, routeBurst)
-		if !checkLimit(routeLimiter, c, span, "route", route) {
+		routeKey := route
+		if routeLimit, pattern := matchRouteLimit(cfg, route); routeLimit != nil {
+			routeQPS = routeLimit.QPS
+			routeBurst = routeLimit.Burst
+			routeKey = routeLimiterKey(pattern, routeLimit, c)
+		}
+		routeLimiter := mdt.getOrCreateLimiter("route", routeKey, routeQPS, routeBurst)
+		if !checkLimit(routeLimiter, c, span, "route", routeKey) {
 			return
 		}
 

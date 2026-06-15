@@ -85,6 +85,9 @@ services:
       KIMI_API_KEY: ${KIMI_API_KEY}
       KIMI_BASE_URL: ${KIMI_BASE_URL}
       KIMI_CHAT_MODEL: ${KIMI_CHAT_MODEL}
+      OPENAI_EMBEDDING_API_KEY: ${OPENAI_EMBEDDING_API_KEY}
+      OPENAI_EMBEDDING_BASE_URL: ${OPENAI_EMBEDDING_BASE_URL}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL}
       TITANX_BASE_URL: http://titanx-agent:3000
     volumes:
       - ../backend/config/keys:/app/config/keys:ro
@@ -127,4 +130,3 @@ volumes:
   redis_data:
   es_data:
   backend_uploads:
-
